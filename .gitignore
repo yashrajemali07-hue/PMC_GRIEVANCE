@@ -1,12 +1,18 @@
-# Node modules
+# Dependencies
 node_modules/
 
 # Environment files
 .env
+.env.local
 
-# Uploaded images (preserve folder structure via .gitkeep)
+# Uploads
+uploads/
 public/uploads/*
 !public/uploads/.gitkeep
+
+# Reference folders
+reference/
+ecotrack/
 
 # Logs
 npm-debug.log*

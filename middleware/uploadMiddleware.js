@@ -3,8 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
-// Root uploads directory: /uploads
-const uploadDirectory = path.join(__dirname, '..', 'uploads');
+// Root uploads directory: /uploads (or /tmp/uploads in Vercel serverless environment)
+const uploadDirectory = process.env.VERCEL
+  ? path.join('/tmp', 'uploads')
+  : path.join(__dirname, '..', 'uploads');
+
 if (!fs.existsSync(uploadDirectory)) {
   fs.mkdirSync(uploadDirectory, { recursive: true });
 }

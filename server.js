@@ -10,7 +10,11 @@ dotenv.config();
 
 // Connect to MongoDB
 const connectDB = require('./config/db.js');
-connectDB();
+if (!process.env.VERCEL) {
+  connectDB().catch((err) => {
+    console.error('[PMC Portal] Initial database connection error:', err.message);
+  });
+}
 
 // Initialize Express Application
 const app = express();
@@ -25,6 +29,24 @@ app.use(cors());
 // Body Parsers for incoming JSON and Form Data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serverless Database Connection Middleware
+// Ensures MongoDB connection is established before processing API routes
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api') && req.path !== '/api/health') {
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error('[Serverless DB Error]', err.message);
+      return res.status(503).json({
+        success: false,
+        message: 'Database connection failed. Please verify MONGO_URI in Vercel Environment Variables.',
+        error: err.message,
+      });
+    }
+  }
+  next();
+});
 
 // Serve static files from the /public directory and /uploads directory
 if (process.env.VERCEL) {
@@ -42,24 +64,27 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
  * @desc    Check system health and database connectivity
  * @access  Public
  */
-app.get('/api/health', (req, res) => {
-  const mongoStateCode = mongoose.connection.readyState;
-  const stateDescriptions = {
-    0: 'disconnected',
-    1: 'connected',
-    2: 'connecting',
-    3: 'disconnecting',
-  };
+app.get('/api/health', async (req, res) => {
+  let dbError = null;
+  try {
+    await connectDB();
+  } catch (err) {
+    dbError = err.message;
+  }
 
-  const dbStatus = stateDescriptions[mongoStateCode] || 'unknown';
+  const isConnected = mongoose.connection.readyState === 1;
 
-  res.status(200).json({
-    status: 'ok',
+  res.status(isConnected ? 200 : 503).json({
+    status: isConnected ? 'ok' : 'degraded',
     service: 'PMC Citizen Grievance Portal Backend',
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    serverless: !!process.env.VERCEL,
     database: {
-      status: dbStatus,
-      connected: mongoStateCode === 1,
+      status: isConnected ? 'connected' : 'disconnected',
+      connected: isConnected,
+      hasMongoUri: !!process.env.MONGO_URI,
+      error: dbError,
     },
     uptime: process.uptime(),
   });

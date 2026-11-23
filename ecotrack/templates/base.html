@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PMC Smart Environmental Cell{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+  <link href="/static/css/main.css" rel="stylesheet">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-expand-lg sticky-top eco-navbar">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-3" href="{{ url_for('public.index') }}">
+      <span class="pmc-seal">PMC</span>
+      <span>
+        <span class="brand-text d-block">Pune Municipal Corporation</span>
+        <span class="brand-subtitle d-none d-sm-block">PMC Smart Environmental Cell</span>
+      </span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-label="Open navigation">
+      <i class="bi bi-list text-white fs-3"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.index' %}active{% endif %}" href="{{ url_for('public.index') }}">Home</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.complaint' %}active{% endif %}" href="{{ url_for('public.complaint') }}">Complaint</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.track' %}active{% endif %}" href="{{ url_for('public.track') }}">Track</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.eco_actions' %}active{% endif %}" href="{{ url_for('public.eco_actions') }}">Eco Actions</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='auth.leaderboard' %}active{% endif %}" href="{{ url_for('auth.leaderboard') }}">Leaderboard</a></li>
+        {% if current_user %}
+          <li class="nav-item"><a class="nav-link {% if request.endpoint=='auth.profile' %}active{% endif %}" href="{{ url_for('auth.profile') }}">Profile</a></li>
+          <li class="nav-item"><a class="btn btn-sm btn-eco-admin" href="{{ url_for('auth.logout') }}">Logout</a></li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Citizen Login</a></li>
+          <li class="nav-item"><a class="btn btn-sm btn-eco-admin" href="{{ url_for('auth.register') }}">Verify Citizen</a></li>
+        {% endif %}
+        <li class="nav-item"><a class="nav-link nav-pmc-admin" href="{{ url_for('admin.admin_dashboard') }}">PMC Dashboard</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="toast-container position-fixed top-0 end-0 p-3 pmc-toast-stack">
+    {% for cat, msg in messages %}
+    <div class="toast align-items-center border-0 eco-toast text-bg-{{ 'danger' if cat == 'danger' else ('warning' if cat == 'warning' else ('success' if cat == 'success' else 'primary')) }}" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">{{ msg|safe }}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<div class="page-loader" id="pageLoader"><span></span></div>
+
+<main class="pb-mobile-nav">
+  {% block content %}{% endblock %}
+</main>
+
+<nav class="bottom-nav d-lg-none">
+  <a href="{{ url_for('public.index') }}" class="{% if request.endpoint=='public.index' %}active{% endif %}"><i class="bi bi-house"></i><span>Home</span></a>
+  <a href="{{ url_for('public.complaint') }}" class="{% if request.endpoint=='public.complaint' %}active{% endif %}"><i class="bi bi-plus-circle"></i><span>Complaint</span></a>
+  <a href="{{ url_for('public.track') }}" class="{% if request.endpoint=='public.track' %}active{% endif %}"><i class="bi bi-search"></i><span>Track</span></a>
+  <a href="{{ url_for('public.eco_actions') }}" class="{% if request.endpoint=='public.eco_actions' %}active{% endif %}"><i class="bi bi-tree"></i><span>Actions</span></a>
+  <a href="{{ url_for('auth.profile') if current_user else url_for('auth.login') }}" class="{% if request.endpoint=='auth.profile' %}active{% endif %}"><i class="bi bi-person"></i><span>Profile</span></a>
+</nav>
+
+<footer class="eco-footer mt-5">
+  <div class="container py-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-lg-7">
+        <div class="d-flex align-items-center gap-3">
+          <span class="pmc-seal footer-seal">PMC</span>
+          <div>
+            <strong class="footer-brand">Pune Municipal Corporation</strong>
+            <div class="text-white-50 small">PMC Smart Environmental Cell · Citizen environmental action platform</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 text-lg-end">
+        <small class="text-white-50">Environmental Monitoring · Complaint Resolution · Public Transparency</small>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/js/ui.js"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

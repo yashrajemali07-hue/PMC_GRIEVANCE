@@ -1,0 +1,130 @@
+<!-- public/views/home.html -->
+<div>
+  <!-- Hero Section -->
+  <section class="hero-banner">
+    <div class="container text-center">
+      <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-semibold mb-3">
+        <i class="bi bi-shield-check me-1"></i> Pune Municipal Corporation Official Portal
+      </span>
+      <h1 class="display-5 fw-bold mb-3">पुणे महानगरपालिका नागरिक तक्रार निवारण</h1>
+      <p class="lead mb-4 text-white-50 mx-auto" style="max-width: 720px;">
+        Empowering Pune citizens to report civic grievances, track resolutions in real-time, and earn civic reward points for cleaner, safer neighborhoods.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-3">
+        <a href="#/file-grievance" class="btn btn-warning btn-lg px-4 fw-bold shadow-sm">
+          <i class="bi bi-megaphone-fill me-2"></i> File a Grievance
+        </a>
+        <a href="#/track" class="btn btn-light btn-lg px-4 fw-semibold text-primary shadow-sm">
+          <i class="bi bi-search me-2"></i> Track Complaint Status
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Statistics Row -->
+  <div class="container my-4">
+    <div class="row g-3">
+      <div class="col-6 col-lg-3">
+        <div class="stat-widget">
+          <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+          <div>
+            <h3 class="fw-bold mb-0">{{ stats.totalGrievances || 0 }}</h3>
+            <small class="text-muted">Total Grievances</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-widget">
+          <div class="stat-icon bg-success bg-opacity-10 text-success">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+          <div>
+            <h3 class="fw-bold mb-0">{{ stats.resolvedGrievances || 0 }}</h3>
+            <small class="text-muted">Resolved Issues</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-widget">
+          <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+          <div>
+            <h3 class="fw-bold mb-0">{{ stats.inProgressGrievances || 0 }}</h3>
+            <small class="text-muted">In Progress</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-widget">
+          <div class="stat-icon bg-info bg-opacity-10 text-info">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <div>
+            <h3 class="fw-bold mb-0">{{ stats.activeCitizens || 0 }}</h3>
+            <small class="text-muted">Active Citizens</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Map & Quick Recent List -->
+  <div class="container mb-5">
+    <div class="row g-4">
+      <!-- Leaflet Map -->
+      <div class="col-lg-8">
+        <div class="pmc-card p-3 h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-primary">
+              <i class="bi bi-geo-alt-fill me-2 text-danger"></i>Live Pune Grievance Map
+            </h5>
+            <div class="small">
+              <span class="badge badge-priority-High me-1">High</span>
+              <span class="badge badge-priority-Medium me-1">Medium</span>
+              <span class="badge badge-priority-Low">Low</span>
+            </div>
+          </div>
+          <div id="leafletHomeMap"></div>
+          <div class="mt-2 text-muted small text-center">
+            Click on any circle pin to view complaint details and track its live timeline.
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Reports Feed -->
+      <div class="col-lg-4">
+        <div class="pmc-card p-3 h-100 d-flex flex-direction-column justify-content-between">
+          <div>
+            <h5 class="fw-bold mb-3 text-primary">
+              <i class="bi bi-clock-history me-2"></i>Recent Grievances
+            </h5>
+            <div ng-if="recentGrievances.length === 0" class="text-muted small py-4 text-center">
+              No recent grievances found.
+            </div>
+            <div class="list-group list-group-flush" ng-if="recentGrievances.length > 0">
+              <div class="list-group-item px-0 py-2 border-bottom" ng-repeat="g in recentGrievances">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-bold small text-primary">{{ g.grievanceId }}</span>
+                  <span class="badge" ng-class="'badge-status-' + g.status.replace(' ', '')">{{ g.status }}</span>
+                </div>
+                <div class="text-truncate fw-semibold small">{{ g.title || g.category }}</div>
+                <div class="text-muted small d-flex justify-content-between">
+                  <span><i class="bi bi-building me-1"></i>{{ g.ward }}</span>
+                  <span class="badge" ng-class="'badge-priority-' + g.priority">{{ g.priority }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pt-3 border-top text-center">
+            <a href="#/track" class="btn btn-outline-primary btn-sm w-100">
+              Track Any Complaint by ID <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

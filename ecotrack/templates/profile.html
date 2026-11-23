@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Citizen Profile - PMC Smart Environmental Cell{% endblock %}
+{% block content %}
+<section class="profile-hero">
+  <div class="container">
+    <div class="profile-summary glass-panel">
+      <div class="profile-avatar">{{ (user.name or 'C')[0] }}</div>
+      <div>
+        <span class="panel-kicker">Verified PMC Citizen</span>
+        <h1>{{ user.name }}</h1>
+        <p class="mb-0">{{ user.ward }} · {{ user.email }}</p>
+      </div>
+      <div class="eco-level-badge ms-lg-auto">
+        <i class="bi bi-award"></i>
+        <span>{{ level }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container my-4">
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="stat-card stat-animated"><div class="stat-icon green"><i class="bi bi-stars"></i></div><div class="stat-number">{{ user.eco_points or 0 }}</div><div class="stat-label">Eco Points</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card stat-animated"><div class="stat-icon blue"><i class="bi bi-patch-check"></i></div><div class="stat-number fs-4">{{ level }}</div><div class="stat-label">Citizen Level</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card stat-animated"><div class="stat-icon amber"><i class="bi bi-megaphone"></i></div><div class="stat-number">{{ complaints|length }}</div><div class="stat-label">Complaints</div></div></div>
+    <div class="col-6 col-lg-3"><div class="stat-card stat-animated"><div class="stat-icon purple"><i class="bi bi-tree"></i></div><div class="stat-number">{{ actions|length }}</div><div class="stat-label">Eco Actions</div></div></div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="eco-card dashboard-card">
+        <div class="eco-card-header"><h5><i class="bi bi-clock-history me-2"></i>Complaint History</h5></div>
+        <div class="table-responsive">
+          <table class="table admin-table pmc-table mb-0">
+            <thead><tr><th>ID</th><th>Issue</th><th>Priority</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for c in complaints %}
+              <tr>
+                <td><a href="{{ url_for('public.track', complaint_id=c.complaint_id) }}"><code>{{ c.complaint_id }}</code></a></td>
+                <td>{{ c.issue_type }}</td>
+                <td><span class="badge-status badge-priority-{{ (c.priority or 'Low')|lower }}">{{ c.priority or 'Low' }}</span></td>
+                <td><span class="badge-status badge-{{ 'pending' if c.status == 'Pending' else ('progress' if c.status == 'In Progress' else 'resolved') }}">{{ c.status }}</span></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4" class="text-center text-muted py-4">No complaints yet.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="eco-card dashboard-card">
+        <div class="eco-card-header"><h5><i class="bi bi-tree me-2"></i>Recent Eco Actions</h5></div>
+        <div class="eco-card-body">
+          {% for action in actions[:5] %}
+            <div class="activity-row">
+              <span class="activity-icon"><i class="bi bi-leaf"></i></span>
+              <div>
+                <strong>{{ action.title }}</strong>
+                <div class="text-muted small">{{ action.category }} · {{ action.date }}</div>
+              </div>
+            </div>
+          {% else %}
+            <p class="text-muted mb-0">Post an eco action to earn +10 points.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

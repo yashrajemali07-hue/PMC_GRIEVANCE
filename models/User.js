@@ -1,0 +1,96 @@
+// models/User.js - Citizen & Admin User Model
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const { PMC_WARDS } = require('./constants');
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Please enter full name'],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, 'Please enter email address'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/,
+        'Please provide a valid email address',
+      ],
+    },
+    passwordHash: {
+      type: String,
+      required: [true, 'Password hash is required'],
+    },
+    ward: {
+      type: String,
+      required: [true, 'Please select your Pune ward office'],
+      enum: {
+        values: PMC_WARDS,
+        message: '{VALUE} is not a recognized PMC ward office',
+      },
+    },
+    role: {
+      type: String,
+      enum: ['citizen', 'admin'],
+      default: 'citizen',
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otp: {
+      type: String,
+      default: null,
+    },
+    otpExpiry: {
+      type: Date,
+      default: null,
+    },
+    points: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Method to verify password against stored passwordHash
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.passwordHash);
+};
+
+// Virtual setter for password to auto-hash into passwordHash
+userSchema.virtual('password').set(function (plainPassword) {
+  this._plainPassword = plainPassword;
+  this.passwordHash = bcrypt.hashSync(plainPassword, 10);
+});
+
+// Virtual helper for user civic badge level based on points
+userSchema.virtual('civicLevel').get(function () {
+  const pts = this.points || 0;
+  if (pts >= 100) return 'Pune Civic Champion';
+  if (pts >= 40) return 'Active Citizen';
+  return 'Beginner';
+});
+
+// Exclude passwordHash and otp from JSON output by default
+userSchema.set('toJSON', {
+  virtuals: true,
+  transform: function (doc, ret) {
+    delete ret.passwordHash;
+    delete ret.otp;
+    delete ret.otpExpiry;
+    delete ret.__v;
+    return ret;
+  },
+});
+
+userSchema.set('toObject', { virtuals: true });
+
+module.exports = mongoose.model('User', userSchema);

@@ -1,0 +1,243 @@
+/* public/css/style.css - PMC Citizen Grievance Portal Civic Green & Blue Theme */
+
+:root {
+  --pmc-blue: #0b5ed7;
+  --pmc-dark-blue: #084298;
+  --pmc-light-blue: #e7f1ff;
+  --pmc-green: #198754;
+  --pmc-dark-green: #0f5132;
+  --pmc-light-green: #d1e7dd;
+  --pmc-surface: #ffffff;
+  --pmc-bg: #f4f7fb;
+  --pmc-text: #1e293b;
+  --pmc-muted: #64748b;
+  --pmc-border: #e2e8f0;
+}
+
+body {
+  background-color: var(--pmc-bg);
+  color: var(--pmc-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main.app-content {
+  flex: 1 0 auto;
+}
+
+/* Civic Header & Navbar */
+.pmc-navbar {
+  background: linear-gradient(135deg, var(--pmc-dark-blue) 0%, #0d6efd 50%, var(--pmc-green) 100%);
+  box-shadow: 0 4px 12px rgba(11, 94, 215, 0.15);
+}
+
+.pmc-navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pmc-navbar .nav-link {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9) !important;
+  transition: color 0.2s, background-color 0.2s;
+  border-radius: 6px;
+  padding: 0.5rem 0.85rem !important;
+}
+
+.pmc-navbar .nav-link:hover,
+.pmc-navbar .nav-link.active {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Hero Section */
+.hero-banner {
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 40%, #198754 100%);
+  color: #ffffff;
+  padding: 3.5rem 0 3rem;
+  border-bottom: 4px solid #ffc107;
+}
+
+/* Card Modern Styling */
+.pmc-card {
+  background: var(--pmc-surface);
+  border: 1px solid var(--pmc-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pmc-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.pmc-card-header {
+  border-bottom: 1px solid var(--pmc-border);
+  background-color: #f8fafc;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+/* Map Containers */
+#leafletHomeMap,
+#leafletPickerMap {
+  width: 100%;
+  height: 440px;
+  border-radius: 10px;
+  border: 1px solid var(--pmc-border);
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  #leafletHomeMap,
+  #leafletPickerMap {
+    height: 320px;
+  }
+}
+
+/* Priority Badges */
+.badge-priority-High {
+  background-color: #dc3545;
+  color: #fff;
+}
+.badge-priority-Medium {
+  background-color: #fd7e14;
+  color: #fff;
+}
+.badge-priority-Low {
+  background-color: #0dcaf0;
+  color: #000;
+}
+
+/* Status Badges */
+.badge-status-Submitted {
+  background-color: #0d6efd;
+  color: #fff;
+}
+.badge-status-InProgress,
+.badge-status-In-Progress {
+  background-color: #ffc107;
+  color: #000;
+}
+.badge-status-Resolved {
+  background-color: #198754;
+  color: #fff;
+}
+.badge-status-Rejected {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+/* Audit Timeline */
+.timeline-list {
+  position: relative;
+  padding-left: 30px;
+  list-style: none;
+}
+
+.timeline-list::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 11px;
+  width: 3px;
+  background: #cbd5e1;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.timeline-badge {
+  position: absolute;
+  left: -30px;
+  top: 2px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--pmc-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  box-shadow: 0 0 0 4px #e0f2fe;
+}
+
+.timeline-badge.badge-success {
+  background: var(--pmc-green);
+  box-shadow: 0 0 0 4px #dcfce7;
+}
+
+.timeline-badge.badge-warning {
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px #fef3c7;
+}
+
+/* Leaderboard Rank Trophies */
+.rank-trophy-1 { color: #f59e0b; font-size: 1.4rem; }
+.rank-trophy-2 { color: #94a3b8; font-size: 1.3rem; }
+.rank-trophy-3 { color: #b45309; font-size: 1.2rem; }
+
+/* Image Thumbnails */
+.complaint-thumb {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--pmc-border);
+}
+
+.complaint-detail-img {
+  max-height: 280px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--pmc-border);
+}
+
+/* Stats Pill Cards */
+.stat-widget {
+  padding: 1.25rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #ffffff;
+  border: 1px solid var(--pmc-border);
+}
+
+.stat-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+/* Footer */
+footer.pmc-footer {
+  background: #0f172a;
+  color: #cbd5e1;
+  padding: 2.5rem 0 1.5rem;
+  margin-top: auto;
+}
+
+footer.pmc-footer a {
+  color: #94a3b8;
+  text-decoration: none;
+}
+
+footer.pmc-footer a:hover {
+  color: #ffffff;
+}

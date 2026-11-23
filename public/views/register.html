@@ -1,0 +1,76 @@
+<!-- public/views/register.html -->
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-5">
+      <div class="pmc-card p-4">
+        <div class="text-center mb-4">
+          <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle d-inline-block mb-2">
+            <i class="bi bi-person-plus-fill fs-2"></i>
+          </div>
+          <h3 class="fw-bold text-primary">Citizen Registration</h3>
+          <p class="text-muted small">Register with your Pune ward to file and track grievances</p>
+        </div>
+
+        <!-- Alert messages -->
+        <div class="alert alert-danger py-2 small" ng-if="errorMsg">
+          <i class="bi bi-exclamation-circle me-1"></i> {{ errorMsg }}
+        </div>
+
+        <form ng-submit="doRegister()">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input type="text" class="form-control" ng-model="regData.name" placeholder="e.g. Ramesh Kulkarni" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control" ng-model="regData.email" placeholder="name@example.com" required>
+            </div>
+            <div class="form-text small">A 6-digit OTP will be dispatched to this email.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock"></i></span>
+              <input type="password" class="form-control" ng-model="regData.password" placeholder="At least 6 characters" minlength="6" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Pune Ward Office</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-geo"></i></span>
+              <select class="form-select" ng-model="regData.ward" required>
+                <option value="" disabled selected>-- Select your PMC Ward --</option>
+                <option ng-repeat="w in wards" value="{{ w }}">{{ w }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Contact Phone (Optional)</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+              <input type="tel" class="form-control" ng-model="regData.phone" placeholder="10-digit mobile number">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" ng-disabled="submitting">
+            <span ng-if="!submitting"><i class="bi bi-arrow-right-circle me-1"></i> Register & Send OTP</span>
+            <span ng-if="submitting"><i class="bi bi-hourglass-split me-1"></i> Sending OTP...</span>
+          </button>
+        </form>
+
+        <div class="text-center mt-3 pt-3 border-top small text-muted">
+          Already registered? <a href="#/login" class="text-primary fw-semibold">Login here</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

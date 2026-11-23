@@ -1,0 +1,89 @@
+<!-- public/views/profile.html -->
+<div class="container my-5">
+  <div class="row g-4">
+    
+    <!-- User Info Card -->
+    <div class="col-lg-4">
+      <div class="pmc-card p-4 text-center">
+        <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle d-inline-block mb-3">
+          <i class="bi bi-person-circle fs-1"></i>
+        </div>
+        <h4 class="fw-bold mb-1">{{ user.name || 'Citizen' }}</h4>
+        <p class="text-muted small mb-2">{{ user.email }}</p>
+        <span class="badge bg-secondary mb-3">
+          <i class="bi bi-geo-alt me-1"></i> {{ user.ward || 'Pune' }}
+        </span>
+
+        <div class="p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3 my-3">
+          <span class="text-muted small d-block mb-1">Your Civic Points</span>
+          <h2 class="fw-bold text-success mb-0">{{ user.points || 0 }} pts</h2>
+          <span class="badge bg-success mt-2">{{ user.civicLevel || 'Beginner' }}</span>
+        </div>
+
+        <div class="text-muted small text-start border-top pt-3">
+          <p class="mb-1"><i class="bi bi-info-circle text-primary me-1"></i> Earn <strong>+5 points</strong> for every grievance reported.</p>
+          <p class="mb-0"><i class="bi bi-award text-success me-1"></i> Earn <strong>+15 points</strong> upon verified resolution!</p>
+        </div>
+
+        <div class="mt-4">
+          <a href="#/file-grievance" class="btn btn-primary w-100 fw-semibold">
+            <i class="bi bi-plus-circle me-1"></i> Report New Grievance
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grievances History -->
+    <div class="col-lg-8">
+      <div class="pmc-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+          <h4 class="fw-bold text-primary mb-0">
+            <i class="bi bi-clock-history me-2"></i>My Reported Grievances
+          </h4>
+          <span class="badge bg-primary rounded-pill">{{ grievances.length }} Total</span>
+        </div>
+
+        <div ng-if="loading" class="text-center py-5 text-muted">
+          <i class="bi bi-hourglass-split fs-2"></i>
+          <p class="mt-2">Loading your grievance history...</p>
+        </div>
+
+        <div ng-if="!loading && grievances.length === 0" class="text-center py-5">
+          <i class="bi bi-inbox fs-1 text-muted"></i>
+          <h5 class="fw-bold text-secondary mt-3">No Grievances Submitted Yet</h5>
+          <p class="text-muted small">Help keep your neighborhood clean and safe by reporting municipal issues.</p>
+          <a href="#/file-grievance" class="btn btn-outline-primary btn-sm mt-2">File Your First Grievance</a>
+        </div>
+
+        <div class="list-group list-group-flush" ng-if="!loading && grievances.length > 0">
+          <div class="list-group-item px-0 py-3 border-bottom" ng-repeat="g in grievances">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+              <a href="#/track/{{ g.grievanceId }}" class="fw-bold text-decoration-none fs-6 text-primary">
+                {{ g.grievanceId }}
+              </a>
+              <div>
+                <span class="badge me-1" ng-class="'badge-priority-' + g.priority">{{ g.priority }}</span>
+                <span class="badge" ng-class="'badge-status-' + g.status.replace(' ', '')">{{ g.status }}</span>
+              </div>
+            </div>
+
+            <h6 class="fw-semibold mb-1">{{ g.title }}</h6>
+            <p class="text-muted small mb-2">{{ g.description }}</p>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center small text-muted">
+              <div>
+                <span class="me-3"><i class="bi bi-tag me-1"></i>{{ g.category }}</span>
+                <span><i class="bi bi-geo-alt me-1"></i>{{ g.ward }}</span>
+              </div>
+              <div>
+                <a href="#/track/{{ g.grievanceId }}" class="btn btn-sm btn-outline-primary py-0">View Timeline &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>

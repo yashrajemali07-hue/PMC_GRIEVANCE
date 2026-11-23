@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Track Complaint - PMC Smart Environmental Cell{% endblock %}
+
+{% block content %}
+
+<section class="page-header">
+  <div class="container">
+    <h1><i class="bi bi-search me-2"></i>Track Your Complaint</h1>
+    <p class="mb-0">Enter your PMC complaint ID to view real-time status and resolution updates.</p>
+  </div>
+</section>
+
+<section class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <!-- Search Form -->
+      <div class="eco-card mb-4">
+        <div class="eco-card-body">
+          <form method="POST" action="{{ url_for('public.track') }}" class="eco-form">
+            <label class="form-label fw-bold"><i class="bi bi-upc-scan me-1"></i>Complaint ID</label>
+            <div class="input-group">
+              <span class="input-group-text" style="background:var(--eco-green-pale);border-color:var(--eco-border);">ECO-</span>
+              <input type="text" name="complaint_id"
+                     class="form-control"
+                     placeholder="e.g. ECO-2024-0001"
+                     value="{{ request.form.get('complaint_id', request.args.get('complaint_id', '')) }}"
+                     style="font-weight:600;letter-spacing:.5px;">
+              <button class="btn btn-eco" type="submit">
+                <i class="bi bi-search me-1"></i>Track
+              </button>
+            </div>
+            <small class="text-muted mt-1 d-block"><i class="bi bi-info-circle me-1"></i>The Complaint ID was provided when you submitted your complaint.</small>
+          </form>
+        </div>
+      </div>
+
+      <!-- Result -->
+      {% if complaint %}
+      <div class="eco-card fade-up">
+        <div class="eco-card-header d-flex align-items-center justify-content-between">
+          <h5 class="mb-0"><i class="bi bi-clipboard2-check me-2"></i>{{ complaint.complaint_id }}</h5>
+          {% if complaint.status == 'Pending' %}
+            <span class="badge-status badge-pending">⏳ Pending</span>
+          {% elif complaint.status == 'In Progress' %}
+            <span class="badge-status badge-progress">🔧 In Progress</span>
+          {% else %}
+            <span class="badge-status badge-resolved">✅ Resolved</span>
+          {% endif %}
+        </div>
+        <div class="eco-card-body">
+
+          <!-- Details Grid -->
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <small class="text-muted d-block mb-1"><i class="bi bi-person me-1"></i>NAME</small>
+              <strong>{{ complaint.name }}</strong>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted d-block mb-1"><i class="bi bi-telephone me-1"></i>PHONE</small>
+              <strong>{{ complaint.phone }}</strong>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted d-block mb-1"><i class="bi bi-geo-alt me-1"></i>ADDRESS</small>
+              <strong>{{ complaint.address }}</strong>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted d-block mb-1"><i class="bi bi-tag me-1"></i>ISSUE TYPE</small>
+              <span class="badge-status badge-garbage">{{ complaint.issue_type }}</span>
+            </div>
+            <div class="col-sm-6">
+              <small class="text-muted d-block mb-1"><i class="bi bi-flag me-1"></i>PRIORITY</small>
+              <span class="badge-status badge-priority-{{ (complaint.priority or 'Low')|lower }}">{{ complaint.priority or 'Low' }}</span>
+            </div>
+            {% if complaint.assigned_worker %}
+            <div class="col-sm-6">
+              <small class="text-muted d-block mb-1"><i class="bi bi-person-badge me-1"></i>ASSIGNED WORKER</small>
+              <strong>{{ complaint.assigned_worker }}</strong>
+            </div>
+            {% endif %}
+            <div class="col-sm-6">
+              <small class="text-muted d-block mb-1"><i class="bi bi-calendar me-1"></i>FILED ON</small>
+              <strong>{{ complaint.created_at.strftime('%d %B %Y, %I:%M %p') }}</strong>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="p-3 rounded-3 mb-4" style="background:var(--eco-sky);border:1px solid var(--eco-border);">
+            <small class="text-muted d-block mb-1"><i class="bi bi-chat-text me-1"></i>DESCRIPTION</small>
+            <p class="mb-0">{{ complaint.description }}</p>
+          </div>
+
+          <!-- Before / After Images -->
+          {% if complaint.image_url or complaint.resolution_image %}
+          <div class="row g-3 mb-4">
+            {% if complaint.image_url %}
+            <div class="col-sm-6">
+              <div class="comparison-card">
+                <small class="text-muted d-block mb-2"><i class="bi bi-camera me-1"></i>BEFORE</small>
+                <img src="{{ complaint.image_url }}" alt="Before complaint photo">
+              </div>
+            </div>
+            {% endif %}
+            {% if complaint.resolution_image %}
+            <div class="col-sm-6">
+              <div class="comparison-card resolved">
+                <small class="text-muted d-block mb-2"><i class="bi bi-check2-circle me-1"></i>AFTER</small>
+                <img src="{{ complaint.resolution_image }}" alt="After resolution photo">
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Timeline -->
+          <h6 style="font-family:'Inter',sans-serif;font-weight:700;color:var(--eco-green-dark);margin-bottom:1rem;">
+            <i class="bi bi-clock-history me-2"></i>Activity Timeline
+          </h6>
+          <ul class="eco-timeline">
+            {% for entry in complaint.timeline | reverse %}
+            <li>
+              <div class="timeline-dot">
+                {% if entry.status == 'Pending' %}⏳
+                {% elif entry.status == 'In Progress' %}🔧
+                {% else %}✅{% endif %}
+              </div>
+              <div class="timeline-content">
+                <div class="tl-status">{{ entry.status }}</div>
+                <div class="tl-note">{{ entry.note }}</div>
+                <div class="tl-time">{{ entry.timestamp.strftime('%d %b %Y, %I:%M %p') }}</div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+
+          <!-- Location Map -->
+          {% if complaint.latitude and complaint.longitude %}
+          <div class="mt-4">
+            <h6 style="font-family:'Inter',sans-serif;font-weight:700;color:var(--eco-green-dark);margin-bottom:.75rem;">
+              <i class="bi bi-map me-2"></i>Complaint Location
+            </h6>
+            <div id="track-map" style="height:240px;border-radius:12px;border:2px solid var(--eco-border);overflow:hidden;"
+                 data-lat="{{ complaint.latitude }}" data-lng="{{ complaint.longitude }}"></div>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right Panel -->
+    <div class="col-lg-5 mt-4 mt-lg-0">
+      <div class="eco-card mb-4">
+        <div class="eco-card-header">
+          <h5><i class="bi bi-bar-chart me-2"></i>Status Meaning</h5>
+        </div>
+        <div class="eco-card-body">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <span class="badge-status badge-pending py-2 px-3">⏳ Pending</span>
+            <small class="text-muted">Complaint received and queued for review by municipal staff.</small>
+          </div>
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <span class="badge-status badge-progress py-2 px-3">🔧 In Progress</span>
+            <small class="text-muted">A worker has been assigned and is actively resolving the issue.</small>
+          </div>
+          <div class="d-flex align-items-start gap-3">
+            <span class="badge-status badge-resolved py-2 px-3">✅ Resolved</span>
+            <small class="text-muted">Issue has been addressed. Resolution photo may be available.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Eco Score Lookup -->
+      <div class="eco-card">
+        <div class="eco-card-header">
+          <h5><i class="bi bi-star me-2"></i>Check Your Eco Score</h5>
+        </div>
+        <div class="eco-card-body">
+          <p class="text-muted mb-3" style="font-size:.9rem;">Enter your phone number to see your current eco points and level.</p>
+          <div class="input-group mb-3">
+            <input type="tel" id="scorePhone" class="form-control" placeholder="Your phone number">
+            <button class="btn btn-eco" onclick="checkScore()">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <div id="scoreResult" class="d-none">
+            <div class="score-widget">
+              <div class="score-number" id="scoreNum">0</div>
+              <div class="mt-1 mb-2" style="font-size:.85rem;opacity:.8;">Eco Points</div>
+              <div id="scoreLevel" style="font-family:'Inter',sans-serif;font-weight:700;font-size:1rem;"></div>
+              <div class="row mt-3 g-2 text-center">
+                <div class="col-6">
+                  <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:.6rem;">
+                    <div id="scoreComplaints" style="font-size:1.25rem;font-weight:700;font-family:'Inter',sans-serif;">0</div>
+                    <div style="font-size:.75rem;opacity:.8;">Complaints</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:.6rem;">
+                    <div id="scoreActions" style="font-size:1.25rem;font-weight:700;font-family:'Inter',sans-serif;">0</div>
+                    <div style="font-size:.75rem;opacity:.8;">Eco Actions</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function checkScore() {
+  const phone = document.getElementById('scorePhone').value.trim();
+  if (!phone) { alert('Please enter a phone number.'); return; }
+  fetch(`/score/${phone}`)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('scoreNum').textContent = d.score;
+      document.getElementById('scoreLevel').textContent = d.level;
+      document.getElementById('scoreComplaints').textContent = d.complaints;
+      document.getElementById('scoreActions').textContent = d.actions;
+      document.getElementById('scoreResult').classList.remove('d-none');
+    });
+}
+
+// Track map
+const mapEl = document.getElementById('track-map');
+if (mapEl) {
+  const lat = parseFloat(mapEl.dataset.lat);
+  const lng = parseFloat(mapEl.dataset.lng);
+  const map = L.map(mapEl).setView([lat, lng], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  L.marker([lat, lng]).addTo(map).bindPopup('Complaint Location');
+}
+</script>
+{% endblock %}

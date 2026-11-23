@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}PMC Environmental Monitoring Dashboard{% endblock %}
+{% block content %}
+<div class="pmc-admin-layout">
+  <aside class="pmc-sidebar">
+    <div class="pmc-sidebar-brand">
+      <span class="pmc-seal">PMC</span>
+      <div>
+        <strong>Pune Municipal Corporation</strong>
+        <small>Smart Environmental Cell</small>
+      </div>
+    </div>
+    <nav>
+      <a class="active" href="{{ url_for('admin.admin_dashboard') }}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+      <a href="#analytics"><i class="bi bi-bar-chart"></i> Analytics</a>
+      <a href="#map"><i class="bi bi-map"></i> Complaint Map</a>
+      <a href="#complaints"><i class="bi bi-table"></i> Complaints</a>
+      <a href="{{ url_for('admin.admin_logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <section class="pmc-admin-main">
+    <div class="admin-command-header glass-panel">
+      <div>
+        <span class="panel-kicker">PMC Environmental Monitoring Dashboard</span>
+        <h1>Smart complaint operations</h1>
+        <p>Ward-level monitoring, resolution tracking, and priority-based civic response.</p>
+      </div>
+      <a href="{{ url_for('admin.admin_logout') }}" class="btn btn-light btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-xl-2"><div class="stat-card admin-stat"><i class="bi bi-clipboard-data"></i><div class="stat-number">{{ stats.total }}</div><div class="stat-label">Total</div></div></div>
+      <div class="col-6 col-xl-2"><div class="stat-card admin-stat"><i class="bi bi-hourglass-split text-warning"></i><div class="stat-number text-warning">{{ stats.pending }}</div><div class="stat-label">Pending</div></div></div>
+      <div class="col-6 col-xl-2"><div class="stat-card admin-stat"><i class="bi bi-check-circle text-success"></i><div class="stat-number text-success">{{ stats.resolved }}</div><div class="stat-label">Resolved</div></div></div>
+      <div class="col-6 col-xl-2"><div class="stat-card admin-stat"><i class="bi bi-exclamation-octagon text-danger"></i><div class="stat-number text-danger">{{ stats.high_priority }}</div><div class="stat-label">High Priority</div></div></div>
+      <div class="col-12 col-xl-4"><div class="stat-card admin-stat text-start"><i class="bi bi-geo-alt text-primary"></i><div class="stat-label">Most affected area</div><div class="stat-number fs-4">{{ stats.most_affected_area }}</div></div></div>
+    </div>
+
+    <div id="analytics" class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <div class="eco-card h-100 dashboard-card">
+          <div class="eco-card-header"><h5><i class="bi bi-pie-chart me-2"></i>Status Summary</h5></div>
+          <div class="eco-card-body"><canvas id="statusChart" height="220"></canvas></div>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="eco-card h-100 dashboard-card">
+          <div class="eco-card-header"><h5><i class="bi bi-bar-chart-line me-2"></i>Issue Type Distribution</h5></div>
+          <div class="eco-card-body"><canvas id="issueChart" height="220"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="eco-card filter-card mb-4">
+      <div class="eco-card-body">
+        <form method="GET" action="{{ url_for('admin.admin_dashboard') }}" class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label">Area / Ward</label>
+            <select name="area" class="form-select form-select-sm">
+              <option value="">All areas</option>
+              {% for area in areas %}<option value="{{ area }}" {% if area_filter == area %}selected{% endif %}>{{ area }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select form-select-sm">
+              <option value="">All statuses</option>
+              {% for status in ['Pending', 'In Progress', 'Resolved'] %}
+                <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Issue Type</label>
+            <select name="issue_type" class="form-select form-select-sm">
+              <option value="">All issues</option>
+              {% for issue in ['Sewage','Garbage','Illegal Dumping','Minor litter','Water Leakage','Air Pollution','Noise Pollution','Other'] %}
+                <option value="{{ issue }}" {% if issue_filter == issue %}selected{% endif %}>{{ issue }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-select form-select-sm">
+              <option value="">All</option>
+              {% for priority in ['High','Medium','Low'] %}
+                <option value="{{ priority }}" {% if priority_filter == priority %}selected{% endif %}>{{ priority }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-1 d-grid"><button class="btn btn-eco btn-sm" title="Apply filters"><i class="bi bi-funnel"></i></button></div>
+        </form>
+      </div>
+    </div>
+
+    <div id="map" class="eco-card map-shell mb-4">
+      <div class="eco-card-header"><h5><i class="bi bi-map me-2"></i>PMC Ward Complaint Map and Density</h5></div>
+      <div class="eco-card-body"><div id="complaint-map"></div></div>
+    </div>
+
+    <div id="complaints" class="admin-table pmc-table-card">
+      <div class="table-title-row">
+        <div><span class="panel-kicker">Complaint Register</span><h5>Verified citizen reports</h5></div>
+        <span class="badge-status badge-progress">{{ complaints|length }} records</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table admin-table pmc-table mb-0">
+          <thead><tr><th>ID</th><th>Citizen</th><th>Issue</th><th>Priority</th><th>Area</th><th>Status</th><th>Before / After</th><th>Actions</th></tr></thead>
+          <tbody>
+          {% for c in complaints %}
+            <tr>
+              <td><code>{{ c.complaint_id }}</code></td>
+              <td><div class="table-user"><span class="avatar-sm">{{ (c.name or 'C')[0] }}</span><span><strong>{{ c.name }}</strong><small>{{ c.user_email or c.phone }}</small></span></div></td>
+              <td>{{ c.issue_type }}</td>
+              <td><span class="badge-status badge-priority-{{ (c.priority or 'Low')|lower }}">{{ c.priority or 'Low' }}</span></td>
+              <td>{{ c.ward or c.address }}</td>
+              <td><span class="badge-status badge-{{ 'pending' if c.status == 'Pending' else ('progress' if c.status == 'In Progress' else 'resolved') }}">{{ c.status }}</span></td>
+              <td>
+                <div class="d-flex gap-1">
+                  {% if c.image_url %}<img class="thumb-img" src="{{ c.image_url }}" onclick="showImg('{{ c.image_url }}')" alt="Before">{% endif %}
+                  {% if c.resolution_image %}<img class="thumb-img" src="{{ c.resolution_image }}" onclick="showImg('{{ c.resolution_image }}')" alt="After">{% endif %}
+                </div>
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-eco" data-bs-toggle="modal" data-bs-target="#updateModal" onclick="setUpdateTarget('{{ c.complaint_id }}', '{{ c.status }}', '{{ c.assigned_worker or '' }}')"><i class="bi bi-pencil"></i></button>
+                  <form method="POST" action="{{ url_for('admin.delete_complaint', complaint_id=c.complaint_id) }}" onsubmit="return confirm('Delete complaint {{ c.complaint_id }}?');">
+                    <button class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8" class="text-center py-5 text-muted">No complaints found.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal fade" id="updateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content pmc-modal">
+      <form method="POST" id="updateForm" enctype="multipart/form-data" class="eco-form">
+        <div class="modal-header"><h5 class="modal-title">Update PMC Complaint Record</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <label class="form-label">Status</label>
+          <select name="status" id="modalStatus" class="form-select mb-3">
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <label class="form-label">Assigned Worker</label>
+          <input name="assigned_worker" id="modalWorker" class="form-control mb-3">
+          <label class="form-label">After Resolution Image</label>
+          <input type="file" name="resolution_image" class="form-control" accept="image/*">
+        </div>
+        <div class="modal-footer"><button class="btn btn-eco">Save Update</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="imgModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content pmc-modal"><img id="modalImg" src="" alt="Preview" class="w-100 rounded"></div></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="/static/js/map.js"></script>
+<script>
+const chartData = {{ chart_data|tojson }};
+new Chart(document.getElementById('statusChart'), {type: 'doughnut', data: {labels: chartData.status_labels, datasets: [{data: chartData.status_values, backgroundColor: ['#f0a500','#2f80ed','#1a7a3c'], borderWidth: 0}]}, options: {cutout: '62%', plugins: {legend: {position: 'bottom'}}}});
+new Chart(document.getElementById('issueChart'), {type: 'bar', data: {labels: chartData.issue_labels, datasets: [{label: 'Complaints', data: chartData.issue_values, backgroundColor: '#2f80ed', borderRadius: 8}]}, options: {plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true, grid: {color: '#e8eef5'}}, x: {grid: {display: false}}}}});
+initComplaintMap(true);
+function setUpdateTarget(complaintId, status, worker) {
+  document.getElementById('updateForm').action = `/admin/update/${complaintId}`;
+  document.getElementById('modalStatus').value = status;
+  document.getElementById('modalWorker').value = worker;
+}
+function showImg(url) {
+  document.getElementById('modalImg').src = url;
+  new bootstrap.Modal(document.getElementById('imgModal')).show();
+}
+</script>
+{% endblock %}

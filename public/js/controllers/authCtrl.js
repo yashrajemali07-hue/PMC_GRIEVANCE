@@ -27,6 +27,13 @@
         email: localStorage.getItem('pmc_pending_email') || '',
         otp: '',
       };
+      $scope.devOtp = localStorage.getItem('pmc_dev_otp') || null;
+
+      $scope.autoFillOtp = function () {
+        if ($scope.devOtp) {
+          $scope.otpData.otp = $scope.devOtp;
+        }
+      };
 
       // Citizen Login Form
       $scope.loginData = {
@@ -74,6 +81,9 @@
         AuthService.register($scope.regData)
           .then(function (res) {
             localStorage.setItem('pmc_pending_email', $scope.regData.email);
+            if (res.data && res.data.devOtp) {
+              localStorage.setItem('pmc_dev_otp', res.data.devOtp);
+            }
             $location.path('/verify-otp');
           })
           .catch(function (err) {
@@ -91,6 +101,7 @@
 
         AuthService.verifyOtp($scope.otpData)
           .then(function (res) {
+            localStorage.removeItem('pmc_dev_otp');
             if (res.data && res.data.token && res.data.user) {
               AuthService.setAuth(res.data.token, res.data.user);
               $location.path('/profile');
@@ -113,8 +124,12 @@
         $scope.successMsg = null;
 
         AuthService.resendOtp($scope.otpData.email)
-          .then(function () {
-            $scope.successMsg = 'A fresh 6-digit OTP has been sent.';
+          .then(function (res) {
+            $scope.successMsg = 'A fresh 6-digit OTP has been generated.';
+            if (res.data && res.data.devOtp) {
+              $scope.devOtp = res.data.devOtp;
+              localStorage.setItem('pmc_dev_otp', res.data.devOtp);
+            }
           })
           .catch(function (err) {
             $scope.errorMsg = (err.data && err.data.message) || 'Failed to resend OTP.';

@@ -88,12 +88,19 @@ const register = async (req, res, next) => {
     // Send OTP using nodemailer (or console print if MAIL_USERNAME not set)
     await sendOtpEmail(cleanEmail, otp);
 
-    res.status(201).json({
+    const response = {
       success: true,
       message: 'Registration successful! Verification OTP sent.',
       email: cleanEmail,
       isVerified: false,
-    });
+    };
+
+    if (!process.env.MAIL_USERNAME) {
+      response.devOtp = otp;
+      response.devMode = true;
+    }
+
+    res.status(201).json(response);
   } catch (error) {
     next(error);
   }
@@ -338,9 +345,68 @@ const getMe = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Resend verification OTP
+ * @route   POST /api/auth/resend-otp
+ * @access  Public
+ */
+const resendOTP = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide email address',
+      });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email. Please register first.',
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Account is already verified. Please log in.',
+      });
+    }
+
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    const salt = await bcrypt.genSalt(10);
+    user.otp = await bcrypt.hash(otp, salt);
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    await sendOtpEmail(cleanEmail, otp);
+
+    const response = {
+      success: true,
+      message: 'A fresh verification OTP has been generated.',
+      email: cleanEmail,
+    };
+
+    if (!process.env.MAIL_USERNAME) {
+      response.devOtp = otp;
+      response.devMode = true;
+    }
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   verifyOTP,
+  resendOTP,
   login,
   getMe,
   getProfile: getMe, // Alias for backward compatibility

@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   register,
   verifyOTP,
+  resendOTP,
   login,
   getMe,
 } = require('../controllers/authController');
@@ -12,6 +13,7 @@ const { protect } = require('../middleware/authMiddleware');
 // Public authentication routes
 router.post('/register', register);
 router.post('/verify-otp', verifyOTP);
+router.post('/resend-otp', resendOTP);
 router.post('/login', login);
 
 // Protected route for current user profile

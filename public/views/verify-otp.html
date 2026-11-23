@@ -18,6 +18,22 @@
           <i class="bi bi-check-circle me-1"></i> {{ successMsg }}
         </div>
 
+        <!-- Dev Mode Helper: Displays OTP when MAIL_USERNAME is not configured -->
+        <div class="alert alert-info py-2 px-3 small mb-3 border-info" ng-if="devOtp">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <i class="bi bi-terminal me-1 text-primary"></i>
+              <strong>Dev OTP:</strong> <span class="badge bg-primary fs-6 font-monospace ms-1">{{ devOtp }}</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" ng-click="autoFillOtp()">
+              <i class="bi bi-magic me-1"></i> Fill OTP
+            </button>
+          </div>
+          <div class="text-muted mt-1" style="font-size: 11px;">
+            Simulated in Dev Mode because MAIL_USERNAME is not set.
+          </div>
+        </div>
+
         <form ng-submit="doVerifyOtp()">
           <div class="mb-3">
             <label class="form-label fw-semibold">Email Address</label>

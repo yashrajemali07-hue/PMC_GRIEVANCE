@@ -122,48 +122,54 @@ module.exports = app;
 // ==========================================
 // Start Server (Only in local / standalone mode)
 // ==========================================
-if (!process.env.VERCEL) {
-  const PORT = process.env.PORT || 5000;
+if (!process.env.VERCEL && require.main === module) {
+  const initialPort = parseInt(process.env.PORT, 10) || 5050;
 
-  const server = app.listen(PORT, () => {
-    console.log('====================================================');
-    console.log(`[PMC Portal] Server running in ${process.env.NODE_ENV || 'development'} mode`);
-    console.log(`[PMC Portal] Listening at: http://localhost:${PORT}`);
-    console.log(`[PMC Portal] Health check: http://localhost:${PORT}/api/health`);
-    console.log(`[PMC Portal] Public web:   http://localhost:${PORT}`);
-    console.log('====================================================');
-  });
+  const startServer = (portToTry) => {
+    const server = app.listen(portToTry, () => {
+      console.log('====================================================');
+      console.log(`[PMC Portal] Server running in ${process.env.NODE_ENV || 'development'} mode`);
+      console.log(`[PMC Portal] Listening at: http://localhost:${portToTry}`);
+      console.log(`[PMC Portal] Health check: http://localhost:${portToTry}/api/health`);
+      console.log(`[PMC Portal] Public web:   http://localhost:${portToTry}`);
+      console.log('====================================================');
+    });
 
-  // Handle server errors gracefully
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`\n[PMC Portal Error] Port ${PORT} is already in use by another process.`);
-      console.error(`[PMC Portal Error] Please free port ${PORT} or set a different PORT in .env`);
-      process.exit(1);
-    } else {
-      console.error('\n[PMC Portal Error] Server encountered an unexpected error:', err.message);
-      process.exit(1);
-    }
-  });
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`[PMC Portal Warning] Port ${portToTry} is already in use.`);
+        console.warn(`[PMC Portal Warning] Trying next available port: ${portToTry + 1}...`);
+        startServer(portToTry + 1);
+      } else {
+        console.error('\n[PMC Portal Error] Server encountered an unexpected error:', err.message);
+        process.exit(1);
+      }
+    });
 
-  // Graceful shutdown handling for nodemon restarts and termination signals
-  const gracefulShutdown = (signal) => {
-    server.close(async () => {
-      try {
-        const mongoose = require('mongoose');
-        if (mongoose.connection.readyState === 1) {
-          await mongoose.connection.close();
-        }
-      } catch (_) {}
-      process.exit(0);
+    // Graceful shutdown handling for nodemon restarts and termination signals
+    const gracefulShutdown = (signal) => {
+      server.close(async () => {
+        try {
+          const mongoose = require('mongoose');
+          if (mongoose.connection.readyState === 1) {
+            await mongoose.connection.close();
+          }
+          if (global.__mongoMemoryServer) {
+            await global.__mongoMemoryServer.stop();
+          }
+        } catch (_) {}
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.once('SIGUSR2', () => {
+      server.close(() => {
+        process.kill(process.pid, 'SIGUSR2');
+      });
     });
   };
 
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.once('SIGUSR2', () => {
-    server.close(() => {
-      process.kill(process.pid, 'SIGUSR2');
-    });
-  });
+  startServer(initialPort);
 }

@@ -25,7 +25,7 @@
       // OTP Verification Form
       $scope.otpData = {
         email: localStorage.getItem('pmc_pending_email') || '',
-        otp: '',
+        otp: localStorage.getItem('pmc_dev_otp') || '',
       };
       $scope.devOtp = localStorage.getItem('pmc_dev_otp') || null;
 
@@ -102,6 +102,7 @@
         AuthService.verifyOtp($scope.otpData)
           .then(function (res) {
             localStorage.removeItem('pmc_dev_otp');
+            localStorage.removeItem('pmc_pending_email');
             if (res.data && res.data.token && res.data.user) {
               AuthService.setAuth(res.data.token, res.data.user);
               $location.path('/profile');
@@ -128,6 +129,7 @@
             $scope.successMsg = 'A fresh 6-digit OTP has been generated.';
             if (res.data && res.data.devOtp) {
               $scope.devOtp = res.data.devOtp;
+              $scope.otpData.otp = res.data.devOtp;
               localStorage.setItem('pmc_dev_otp', res.data.devOtp);
             }
           })
@@ -144,14 +146,21 @@
         AuthService.login($scope.loginData)
           .then(function (res) {
             AuthService.setAuth(res.data.token, res.data.user);
-            $location.path('/profile');
+            if (res.data.user && res.data.user.role === 'admin') {
+              $location.path('/admin-dashboard');
+            } else {
+              $location.path('/profile');
+            }
           })
           .catch(function (err) {
             if (err.data && err.data.requiresVerification) {
-              localStorage.setItem('pmc_pending_email', $scope.loginData.email);
+              localStorage.setItem('pmc_pending_email', err.data.email || $scope.loginData.email);
+              if (err.data.devOtp) {
+                localStorage.setItem('pmc_dev_otp', err.data.devOtp);
+              }
               $location.path('/verify-otp');
             } else {
-              $scope.errorMsg = (err.data && err.data.message) || 'Invalid email or password.';
+              $scope.errorMsg = (err.data && err.data.message) || 'Invalid email/phone or password.';
             }
           })
           .finally(function () {
@@ -167,7 +176,11 @@
         AuthService.adminLogin($scope.adminData)
           .then(function (res) {
             AuthService.setAuth(res.data.token, res.data.user);
-            $location.path('/admin-dashboard');
+            if (res.data.user && res.data.user.role === 'citizen') {
+              $location.path('/profile');
+            } else {
+              $location.path('/admin-dashboard');
+            }
           })
           .catch(function (err) {
             $scope.errorMsg = (err.data && err.data.message) || 'Invalid administrator credentials.';

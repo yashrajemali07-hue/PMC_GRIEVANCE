@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema(
         message: '{VALUE} is not a recognized PMC ward office',
       },
     },
+    phone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     role: {
       type: String,
       enum: ['citizen', 'admin'],

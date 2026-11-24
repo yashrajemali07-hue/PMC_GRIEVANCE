@@ -69,6 +69,7 @@ const register = async (req, res, next) => {
       user.passwordHash = passwordHash;
       user.otp = hashedOtp;
       user.otpExpiry = otpExpiry;
+      if (phone) user.phone = phone;
       await user.save();
     } else {
       // Create new citizen user
@@ -77,6 +78,7 @@ const register = async (req, res, next) => {
         email: cleanEmail,
         passwordHash,
         ward,
+        phone: phone || '',
         role: 'citizen',
         isVerified: false,
         otp: hashedOtp,
@@ -86,7 +88,7 @@ const register = async (req, res, next) => {
     }
 
     // Send OTP using nodemailer (or console print if MAIL_USERNAME not set)
-    await sendOtpEmail(cleanEmail, otp);
+    const mailResult = await sendOtpEmail(cleanEmail, otp);
 
     const response = {
       success: true,
@@ -95,7 +97,7 @@ const register = async (req, res, next) => {
       isVerified: false,
     };
 
-    if (!process.env.MAIL_USERNAME) {
+    if (!process.env.MAIL_USERNAME || (mailResult && mailResult.devMode)) {
       response.devOtp = otp;
       response.devMode = true;
     }
@@ -159,6 +161,13 @@ const verifyOTP = async (req, res, next) => {
       });
     }
 
+    if (!user.otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'No pending OTP found. Please request a new OTP.',
+      });
+    }
+
     // Verify OTP (compare hashed or direct)
     const isMatch = await bcrypt.compare(otp.toString().trim(), user.otp);
     if (!isMatch && user.otp !== otp.toString().trim()) {
@@ -203,20 +212,20 @@ const verifyOTP = async (req, res, next) => {
  */
 const login = async (req, res, next) => {
   try {
-    const { email, username, password } = req.body;
-    const identifier = (email || username || '').trim();
+    const { email, username, phone, password } = req.body;
+    const identifier = (email || username || phone || '').trim();
 
     if (!identifier || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email/username and password',
+        message: 'Please provide email/phone/username and password',
       });
     }
 
-    // 1. Check Admin login via ADMIN_USER and ADMIN_PASS from .env
+    // 1. Check Admin login via ADMIN_USER, ADMIN_PASS, and ADMIN_EMAIL from .env
     const envAdminUser = (process.env.ADMIN_USER || 'admin').trim();
     const envAdminPass = (process.env.ADMIN_PASS || 'adminPMC@2026').trim();
-    const envAdminEmail = (process.env.ADMIN_EMAIL || `${envAdminUser}@punecorporation.org`).toLowerCase();
+    const envAdminEmail = (process.env.ADMIN_EMAIL || `${envAdminUser}@punecorporation.org`).toLowerCase().trim();
 
     if (
       (identifier.toLowerCase() === envAdminUser.toLowerCase() ||
@@ -244,14 +253,19 @@ const login = async (req, res, next) => {
       });
     }
 
-    // 2. Citizen / DB User Login
+    // 2. Citizen / DB User Login (supports email OR mobile number)
     const cleanEmail = identifier.toLowerCase();
-    const user = await User.findOne({ email: cleanEmail });
+    const user = await User.findOne({
+      $or: [
+        { email: cleanEmail },
+        { phone: identifier },
+      ],
+    });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Invalid credentials. Please check your email/mobile and password.',
       });
     }
 
@@ -260,18 +274,33 @@ const login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Invalid credentials. Please check your password.',
       });
     }
 
     // Ensure citizen is verified
     if (!user.isVerified) {
-      return res.status(403).json({
+      // Re-issue a fresh OTP so the user is never stuck
+      const otp = generateOTP();
+      const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+      const salt = await bcrypt.genSalt(10);
+      user.otp = await bcrypt.hash(otp, salt);
+      user.otpExpiry = otpExpiry;
+      await user.save();
+
+      const mailResult = await sendOtpEmail(cleanEmail, otp);
+
+      const resp = {
         success: false,
         requiresVerification: true,
         email: user.email,
-        message: 'Please verify your email with the OTP before logging in.',
-      });
+        message: 'Please verify your email with the OTP before logging in. A new OTP has been dispatched.',
+      };
+      if (!process.env.MAIL_USERNAME || (mailResult && mailResult.devMode)) {
+        resp.devOtp = otp;
+        resp.devMode = true;
+      }
+      return res.status(403).json(resp);
     }
 
     const token = generateToken({ id: user._id, role: user.role, email: user.email });
@@ -384,7 +413,7 @@ const resendOTP = async (req, res, next) => {
     user.otpExpiry = otpExpiry;
     await user.save();
 
-    await sendOtpEmail(cleanEmail, otp);
+    const mailResult = await sendOtpEmail(cleanEmail, otp);
 
     const response = {
       success: true,
@@ -392,7 +421,7 @@ const resendOTP = async (req, res, next) => {
       email: cleanEmail,
     };
 
-    if (!process.env.MAIL_USERNAME) {
+    if (!process.env.MAIL_USERNAME || (mailResult && mailResult.devMode)) {
       response.devOtp = otp;
       response.devMode = true;
     }

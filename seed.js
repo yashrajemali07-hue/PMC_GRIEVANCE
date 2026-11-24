@@ -8,16 +8,18 @@ const { User, Grievance, Counter } = require('./models');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/pmc_grievance_portal';
 
-async function seedDatabase() {
+async function seedDatabase(shouldExit = true) {
   console.log('====================================================');
   console.log('[PMC Database Seeder] Connecting to MongoDB...');
   console.log(`[PMC Database Seeder] URI: ${MONGO_URI}`);
   console.log('====================================================');
 
   try {
-    await mongoose.connect(MONGO_URI, {
-      serverSelectionTimeoutMS: 5000,
-    });
+    if (mongoose.connection.readyState !== 1) {
+      await mongoose.connect(MONGO_URI, {
+        serverSelectionTimeoutMS: 5000,
+      });
+    }
     console.log('[PMC Database Seeder] MongoDB Connected successfully.');
 
     // 1. Clear existing sample data
@@ -296,15 +298,25 @@ async function seedDatabase() {
     console.log(`  Password: ${process.env.ADMIN_PASS || 'adminPMC@2026'}`);
     console.log('====================================================');
 
-    process.exit(0);
+    if (shouldExit) {
+      process.exit(0);
+    }
+    return { success: true };
   } catch (error) {
     console.error('[PMC Database Seeder Error]', error.message);
     if (error.message.includes('buffering timed out') || error.message.includes('ECONNREFUSED')) {
       console.error('[Notice] MongoDB is not running or unreachable at MONGO_URI.');
       console.error('[Notice] Please ensure local MongoDB or MongoDB Atlas is accessible.');
     }
-    process.exit(1);
+    if (shouldExit) {
+      process.exit(1);
+    }
+    throw error;
   }
 }
 
-seedDatabase();
+if (require.main === module) {
+  seedDatabase(true);
+}
+
+module.exports = seedDatabase;

@@ -90,11 +90,11 @@ async function runApiTests() {
       ward: 'Kothrud-Bavdhan',
       phone: '9876543210',
     });
-    console.log('Status:', regRes.status, 'Message:', regRes.data.message, 'devOtp:', regRes.data.devOtp);
-    if (regRes.status !== 201 || !regRes.data.devOtp) {
+    console.log('Status:', regRes.status, 'Message:', regRes.data.message);
+    if (regRes.status !== 201) {
       throw new Error(`Registration failed: ${JSON.stringify(regRes.data)}`);
     }
-    console.log('✓ Registration succeeded and generated OTP:', regRes.data.devOtp);
+    console.log('✓ Registration succeeded and dispatched OTP to email');
 
     // 3. Attempt login BEFORE verification (should return 403 requiresVerification)
     console.log('\n[TEST 3] POST /api/auth/login before OTP verification');
@@ -106,15 +106,31 @@ async function runApiTests() {
     if (prematureLogin.status !== 403 || !prematureLogin.data.requiresVerification) {
       throw new Error('Expected 403 with requiresVerification: true');
     }
-    console.log('✓ Correctly blocked unverified login and re-issued fresh OTP:', prematureLogin.data.devOtp);
+    console.log('✓ Correctly blocked unverified login');
 
-    const activeOtp = prematureLogin.data.devOtp || regRes.data.devOtp;
+    // 4. Verify OTP (Test invalid OTP first, then valid OTP)
+    console.log('\n[TEST 4a] POST /api/auth/verify-otp with invalid OTP');
+    const invalidVerify = await postJson('/api/auth/verify-otp', {
+      email: testEmail,
+      otp: '000000',
+    });
+    console.log('Status:', invalidVerify.status, 'Message:', invalidVerify.data.message);
+    if (invalidVerify.status !== 400) {
+      throw new Error('Expected 400 for invalid OTP');
+    }
+    console.log('✓ Correctly rejected invalid OTP code');
 
-    // 4. Verify OTP
-    console.log('\n[TEST 4] POST /api/auth/verify-otp with OTP:', activeOtp);
+    // Set known test OTP on user to simulate reading received email
+    const User = require('../models/User');
+    const citizenDbUser = await User.findOne({ email: testEmail });
+    citizenDbUser.otp = '654321';
+    citizenDbUser.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await citizenDbUser.save();
+
+    console.log('\n[TEST 4b] POST /api/auth/verify-otp with valid email OTP (654321)');
     const verifyRes = await postJson('/api/auth/verify-otp', {
       email: testEmail,
-      otp: activeOtp,
+      otp: '654321',
     });
     console.log('Status:', verifyRes.status, 'Token:', verifyRes.data.token ? 'Present' : 'Missing');
     if (verifyRes.status !== 200 || !verifyRes.data.token) {

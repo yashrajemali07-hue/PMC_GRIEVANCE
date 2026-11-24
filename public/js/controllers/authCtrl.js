@@ -25,14 +25,7 @@
       // OTP Verification Form
       $scope.otpData = {
         email: localStorage.getItem('pmc_pending_email') || '',
-        otp: localStorage.getItem('pmc_dev_otp') || '',
-      };
-      $scope.devOtp = localStorage.getItem('pmc_dev_otp') || null;
-
-      $scope.autoFillOtp = function () {
-        if ($scope.devOtp) {
-          $scope.otpData.otp = $scope.devOtp;
-        }
+        otp: '',
       };
 
       // Citizen Login Form
@@ -134,9 +127,6 @@
         AuthService.register($scope.regData)
           .then(function (res) {
             localStorage.setItem('pmc_pending_email', $scope.regData.email);
-            if (res.data && res.data.devOtp) {
-              localStorage.setItem('pmc_dev_otp', res.data.devOtp);
-            }
             $location.path('/verify-otp');
           })
           .catch(function (err) {
@@ -154,7 +144,6 @@
 
         AuthService.verifyOtp($scope.otpData)
           .then(function (res) {
-            localStorage.removeItem('pmc_dev_otp');
             localStorage.removeItem('pmc_pending_email');
             if (res.data && res.data.token && res.data.user) {
               AuthService.setAuth(res.data.token, res.data.user);
@@ -179,13 +168,8 @@
 
         AuthService.resendOtp($scope.otpData.email)
           .then(function (res) {
-            $scope.successMsg = 'A fresh 6-digit OTP has been generated.';
+            $scope.successMsg = 'A fresh 6-digit verification code has been dispatched to your email.';
             startOtpCountdown();
-            if (res.data && res.data.devOtp) {
-              $scope.devOtp = res.data.devOtp;
-              $scope.otpData.otp = res.data.devOtp;
-              localStorage.setItem('pmc_dev_otp', res.data.devOtp);
-            }
           })
           .catch(function (err) {
             $scope.errorMsg = (err.data && err.data.message) || 'Failed to resend OTP.';
@@ -209,9 +193,6 @@
           .catch(function (err) {
             if (err.data && err.data.requiresVerification) {
               localStorage.setItem('pmc_pending_email', err.data.email || $scope.loginData.email);
-              if (err.data.devOtp) {
-                localStorage.setItem('pmc_dev_otp', err.data.devOtp);
-              }
               $location.path('/verify-otp');
             } else {
               $scope.errorMsg = (err.data && err.data.message) || 'Invalid email/phone or password.';

@@ -87,20 +87,15 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Send OTP using nodemailer (or console print if MAIL_USERNAME not set)
-    const mailResult = await sendOtpEmail(cleanEmail, otp);
+    // Send OTP using nodemailer
+    await sendOtpEmail(cleanEmail, otp);
 
     const response = {
       success: true,
-      message: 'Registration successful! Verification OTP sent.',
+      message: 'Registration successful! A 6-digit verification OTP has been dispatched to your email address.',
       email: cleanEmail,
       isVerified: false,
     };
-
-    if (!process.env.MAIL_USERNAME || (mailResult && mailResult.devMode)) {
-      response.devOtp = otp;
-      response.devMode = true;
-    }
 
     res.status(201).json(response);
   } catch (error) {
@@ -288,18 +283,14 @@ const login = async (req, res, next) => {
       user.otpExpiry = otpExpiry;
       await user.save();
 
-      const mailResult = await sendOtpEmail(cleanEmail, otp);
+      await sendOtpEmail(cleanEmail, otp);
 
       const resp = {
         success: false,
         requiresVerification: true,
         email: user.email,
-        message: 'Please verify your email with the OTP before logging in. A new OTP has been dispatched.',
+        message: 'Please verify your email with the OTP before logging in. A new OTP has been dispatched to your email.',
       };
-      if (!process.env.MAIL_USERNAME || (mailResult && mailResult.devMode)) {
-        resp.devOtp = otp;
-        resp.devMode = true;
-      }
       return res.status(403).json(resp);
     }
 
@@ -413,18 +404,13 @@ const resendOTP = async (req, res, next) => {
     user.otpExpiry = otpExpiry;
     await user.save();
 
-    const mailResult = await sendOtpEmail(cleanEmail, otp);
+    await sendOtpEmail(cleanEmail, otp);
 
     const response = {
       success: true,
-      message: 'A fresh verification OTP has been generated.',
+      message: 'A fresh 6-digit verification code has been dispatched to your email.',
       email: cleanEmail,
     };
-
-    if (!process.env.MAIL_USERNAME || (mailResult && mailResult.devMode)) {
-      response.devOtp = otp;
-      response.devMode = true;
-    }
 
     res.status(200).json(response);
   } catch (error) {

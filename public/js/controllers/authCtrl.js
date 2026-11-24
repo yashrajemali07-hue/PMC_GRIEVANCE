@@ -47,6 +47,59 @@
         password: '',
       };
 
+      // Password visibility toggle
+      $scope.showPassword = false;
+      $scope.togglePasswordVisibility = function () {
+        $scope.showPassword = !$scope.showPassword;
+      };
+
+      // Quick Demo Fill helpers for testing & presentations
+      $scope.fillDemoCitizen = function () {
+        $scope.loginData.email = 'citizen@example.com';
+        $scope.loginData.password = 'Password123!';
+      };
+
+      $scope.fillDemoCitizenPhone = function () {
+        $scope.loginData.email = '9822012345';
+        $scope.loginData.password = 'Password123!';
+      };
+
+      $scope.fillDemoAdmin = function () {
+        $scope.adminData.username = 'admin';
+        $scope.adminData.password = 'adminPMC@2026';
+      };
+
+      // OTP Countdown Timer (10 minutes)
+      $scope.otpTimer = 600;
+      $scope.formattedTimer = '10:00';
+      let timerInterval = null;
+
+      function startOtpCountdown() {
+        $scope.otpTimer = 600;
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(function () {
+          $scope.$apply(function () {
+            if ($scope.otpTimer > 0) {
+              $scope.otpTimer--;
+              const mins = Math.floor($scope.otpTimer / 60);
+              const secs = $scope.otpTimer % 60;
+              $scope.formattedTimer = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+            } else {
+              clearInterval(timerInterval);
+              $scope.formattedTimer = 'Expired';
+            }
+          });
+        }, 1000);
+      }
+
+      if ($location.path() === '/verify-otp') {
+        startOtpCountdown();
+      }
+
+      $scope.$on('$destroy', function () {
+        if (timerInterval) clearInterval(timerInterval);
+      });
+
       // Load Pune wards from API
       GrievanceService.getMetadata()
         .then(function (res) {
@@ -127,6 +180,7 @@
         AuthService.resendOtp($scope.otpData.email)
           .then(function (res) {
             $scope.successMsg = 'A fresh 6-digit OTP has been generated.';
+            startOtpCountdown();
             if (res.data && res.data.devOtp) {
               $scope.devOtp = res.data.devOtp;
               $scope.otpData.otp = res.data.devOtp;

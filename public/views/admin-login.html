@@ -1,34 +1,51 @@
 <!-- public/views/admin-login.html -->
 <div class="container my-5">
   <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="pmc-card p-4">
-        <div class="text-center mb-4">
-          <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-circle d-inline-block mb-2">
-            <i class="bi bi-shield-lock-fill fs-2"></i>
-          </div>
-          <h3 class="fw-bold text-danger">PMC Officer Login</h3>
-          <p class="text-muted small">Authorized Municipal Ward Officers & System Administrators</p>
+    <div class="col-md-7 col-lg-5">
+      <div class="pmc-card p-4 shadow-sm border-danger-subtle">
+
+        <!-- Role Switcher Tabs -->
+        <div class="d-flex p-1 bg-light rounded-pill mb-4 border">
+          <a href="#/login" class="btn btn-sm btn-light rounded-pill flex-fill text-muted fw-semibold py-2">
+            <i class="bi bi-person me-1"></i> Citizen Login
+          </a>
+          <a href="#/admin-login" class="btn btn-sm btn-danger rounded-pill flex-fill fw-bold py-2 shadow-sm">
+            <i class="bi bi-shield-lock-fill me-1"></i> Officer Portal
+          </a>
         </div>
 
-        <div class="alert alert-danger py-2 small" ng-if="errorMsg">
-          <i class="bi bi-exclamation-circle me-1"></i> {{ errorMsg }}
+        <div class="text-center mb-4">
+          <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-circle d-inline-block mb-2">
+            <i class="bi bi-shield-shaded fs-2"></i>
+          </div>
+          <h4 class="fw-bold text-danger mb-1">PMC Officer Login</h4>
+          <p class="text-muted small">Municipal Ward Officers & System Redressal Administrators</p>
+        </div>
+
+        <div class="alert alert-danger py-2 small d-flex align-items-center" ng-if="errorMsg">
+          <i class="bi bi-exclamation-circle-fill me-2 fs-6"></i>
+          <div>{{ errorMsg }}</div>
         </div>
 
         <form ng-submit="doAdminLogin()">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Admin Username / Email</label>
+            <label class="form-label fw-semibold small">Admin Username or Email</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
-              <input type="text" class="form-control" ng-model="adminData.username" placeholder="admin or email" required>
+              <span class="input-group-text bg-white"><i class="bi bi-person-badge text-muted"></i></span>
+              <input type="text" class="form-control" ng-model="adminData.username" placeholder="admin or admin@punecorporation.org" required autofocus>
             </div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Password</label>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold small mb-0">Password</label>
+              <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" style="font-size: 11px;" ng-click="togglePasswordVisibility()">
+                <i class="bi" ng-class="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i> {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-key"></i></span>
-              <input type="password" class="form-control" ng-model="adminData.password" placeholder="Admin password" required>
+              <span class="input-group-text bg-white"><i class="bi bi-key text-muted"></i></span>
+              <input type="{{ showPassword ? 'text' : 'password' }}" class="form-control" ng-model="adminData.password" placeholder="Officer password" required>
             </div>
           </div>
 
@@ -38,9 +55,23 @@
           </button>
         </form>
 
-        <div class="p-3 bg-light rounded-3 border mt-4 text-center small text-muted">
-          <i class="bi bi-info-circle text-primary me-1"></i>
-          Default college project admin login uses <code>ADMIN_USER</code> & <code>ADMIN_PASS</code> from <code>.env</code>.
+        <!-- Quick One-Click Demo Admin Box -->
+        <div class="bg-light p-3 rounded-3 border mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-danger-subtle text-danger border fw-semibold">
+              <i class="bi bi-key-fill me-1"></i> Default Officer Account
+            </span>
+            <span class="text-muted" style="font-size: 10px;">Click to auto-fill</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-danger w-100 text-start d-flex justify-content-between align-items-center" ng-click="fillDemoAdmin()">
+            <span><i class="bi bi-shield-lock me-1"></i> Username: <code>admin</code> (from .env)</span>
+            <span class="badge bg-danger">Fill</span>
+          </button>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top small">
+          <a href="#/login" class="text-primary fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Citizen Login</a>
+          <a href="#/register" class="text-muted">Register Citizen</a>
         </div>
       </div>
     </div>

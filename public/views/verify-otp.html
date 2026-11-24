@@ -1,54 +1,82 @@
 <!-- public/views/verify-otp.html -->
 <div class="container my-5">
   <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="pmc-card p-4">
+    <div class="col-md-7 col-lg-5">
+      <div class="pmc-card p-4 shadow-sm border-success-subtle">
+        
+        <!-- Step Progress Tracker -->
+        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+          <div class="text-center">
+            <span class="badge rounded-circle bg-success text-white p-2 mb-1" style="width: 28px; height: 28px;">
+              <i class="bi bi-check"></i>
+            </span>
+            <div class="text-muted" style="font-size: 11px;">1. Details</div>
+          </div>
+          <div class="flex-grow-1 border-top border-success mx-2" style="border-width: 2px !important;"></div>
+          <div class="text-center">
+            <span class="badge rounded-circle bg-primary text-white p-2 mb-1" style="width: 28px; height: 28px;">2</span>
+            <div class="fw-bold text-primary" style="font-size: 11px;">2. OTP Code</div>
+          </div>
+          <div class="flex-grow-1 border-top border-secondary mx-2"></div>
+          <div class="text-center">
+            <span class="badge rounded-circle bg-secondary text-white p-2 mb-1" style="width: 28px; height: 28px;">3</span>
+            <div class="text-muted" style="font-size: 11px;">3. Verified</div>
+          </div>
+        </div>
+
         <div class="text-center mb-4">
           <div class="p-3 bg-success bg-opacity-10 text-success rounded-circle d-inline-block mb-2">
             <i class="bi bi-shield-lock-fill fs-2"></i>
           </div>
-          <h3 class="fw-bold text-success">Verify Your Email</h3>
-          <p class="text-muted small">Enter the 6-digit OTP code sent to your registered email</p>
+          <h4 class="fw-bold text-success mb-1">Verify Your Email</h4>
+          <p class="text-muted small mb-1">Enter the 6-digit OTP code dispatched to:</p>
+          <span class="badge bg-light text-dark border font-monospace px-2 py-1 fs-6">
+            {{ otpData.email || 'your registered email' }}
+          </span>
         </div>
 
-        <div class="alert alert-danger py-2 small" ng-if="errorMsg">
-          <i class="bi bi-exclamation-circle me-1"></i> {{ errorMsg }}
+        <!-- Alert messages -->
+        <div class="alert alert-danger py-2 small d-flex align-items-center" ng-if="errorMsg">
+          <i class="bi bi-exclamation-circle-fill me-2 fs-6"></i>
+          <div>{{ errorMsg }}</div>
         </div>
-        <div class="alert alert-success py-2 small" ng-if="successMsg">
-          <i class="bi bi-check-circle me-1"></i> {{ successMsg }}
+        <div class="alert alert-success py-2 small d-flex align-items-center" ng-if="successMsg">
+          <i class="bi bi-check-circle-fill me-2 fs-6"></i>
+          <div>{{ successMsg }}</div>
         </div>
 
-        <!-- Dev Mode Helper: Displays OTP when MAIL_USERNAME is not configured -->
+        <!-- Live Dev OTP Helper (when in dev mode) -->
         <div class="alert alert-info py-2 px-3 small mb-3 border-info" ng-if="devOtp">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <i class="bi bi-terminal me-1 text-primary"></i>
-              <strong>Dev OTP:</strong> <span class="badge bg-primary fs-6 font-monospace ms-1">{{ devOtp }}</span>
+              <strong>Dev Mode OTP:</strong>
+              <span class="badge bg-primary fs-6 font-monospace ms-1">{{ devOtp }}</span>
             </div>
             <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" ng-click="autoFillOtp()">
               <i class="bi bi-magic me-1"></i> Fill OTP
             </button>
           </div>
           <div class="text-muted mt-1" style="font-size: 11px;">
-            Simulated in Dev Mode because MAIL_USERNAME is not set.
+            Simulated in Dev Mode because MAIL_USERNAME is not set in .env.
           </div>
         </div>
 
         <form ng-submit="doVerifyOtp()">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Email Address</label>
-            <input type="email" class="form-control" ng-model="otpData.email" required>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">6-Digit OTP</label>
-            <input type="text" class="form-control text-center fs-3 fw-bold letter-spacing-4" maxlength="6" ng-model="otpData.otp" placeholder="123456" required>
-            <div class="form-text small text-muted">
-              Note: In dev mode, check your backend server console for the generated OTP.
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold small mb-0">6-Digit Verification OTP</label>
+              <span class="badge bg-secondary-subtle text-secondary border small">
+                <i class="bi bi-clock me-1"></i> Expires in: <strong>{{ formattedTimer }}</strong>
+              </span>
+            </div>
+            <input type="text" class="form-control text-center fs-2 fw-bold font-monospace" maxlength="6" ng-model="otpData.otp" placeholder="••••••" style="letter-spacing: 10px;" required autofocus>
+            <div class="form-text text-muted text-center small mt-1">
+              Check your inbox or developer terminal console for the 6-digit code.
             </div>
           </div>
 
-          <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm" ng-disabled="submitting">
+          <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm" ng-disabled="submitting || !otpData.otp">
             <span ng-if="!submitting"><i class="bi bi-check2-circle me-1"></i> Verify & Activate Account</span>
             <span ng-if="submitting"><i class="bi bi-hourglass-split me-1"></i> Verifying...</span>
           </button>
@@ -56,9 +84,9 @@
 
         <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top small">
           <button type="button" class="btn btn-link text-decoration-none p-0 text-muted" ng-click="resendOtp()">
-            <i class="bi bi-arrow-clockwise me-1"></i> Resend OTP
+            <i class="bi bi-arrow-clockwise me-1"></i> Resend Fresh OTP
           </button>
-          <a href="#/login" class="text-primary fw-semibold">Back to Login</a>
+          <a href="#/login" class="text-primary fw-semibold"><i class="bi bi-arrow-left me-1"></i>Back to Login</a>
         </div>
       </div>
     </div>

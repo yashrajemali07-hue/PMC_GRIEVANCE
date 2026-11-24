@@ -1,46 +1,85 @@
 <!-- public/views/login.html -->
 <div class="container my-5">
   <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="pmc-card p-4">
+    <div class="col-md-7 col-lg-5">
+      <div class="pmc-card p-4 shadow-sm">
+        
+        <!-- Role Switcher Tabs -->
+        <div class="d-flex p-1 bg-light rounded-pill mb-4 border">
+          <a href="#/login" class="btn btn-sm btn-primary rounded-pill flex-fill fw-bold py-2 shadow-sm">
+            <i class="bi bi-person-fill me-1"></i> Citizen Login
+          </a>
+          <a href="#/admin-login" class="btn btn-sm btn-light rounded-pill flex-fill text-muted fw-semibold py-2">
+            <i class="bi bi-shield-lock me-1"></i> Officer Portal
+          </a>
+        </div>
+
         <div class="text-center mb-4">
           <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle d-inline-block mb-2">
             <i class="bi bi-box-arrow-in-right fs-2"></i>
           </div>
-          <h3 class="fw-bold text-primary">Citizen Login</h3>
-          <p class="text-muted small">Sign in to report grievances and track your civic score</p>
+          <h4 class="fw-bold text-primary mb-1">Citizen Login</h4>
+          <p class="text-muted small">Sign in to report grievances and track your Pune ward civic score</p>
         </div>
 
-        <div class="alert alert-danger py-2 small" ng-if="errorMsg">
-          <i class="bi bi-exclamation-circle me-1"></i> {{ errorMsg }}
+        <!-- Alert messages -->
+        <div class="alert alert-danger py-2 small d-flex align-items-center" ng-if="errorMsg">
+          <i class="bi bi-exclamation-circle-fill me-2 fs-6"></i>
+          <div>{{ errorMsg }}</div>
         </div>
 
         <form ng-submit="doLogin()">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Email or Mobile Number</label>
+            <label class="form-label fw-semibold small">Registered Email or Mobile Number</label>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-person"></i></span>
-              <input type="text" class="form-control" ng-model="loginData.email" placeholder="name@example.com or 10-digit mobile" required>
+              <span class="input-group-text bg-white"><i class="bi bi-person text-muted"></i></span>
+              <input type="text" class="form-control" ng-model="loginData.email" placeholder="e.g. name@example.com or 9822012345" required autofocus>
             </div>
+            <div class="form-text text-muted" style="font-size: 11px;">You can log in using either your verified email or 10-digit mobile number.</div>
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Password</label>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label fw-semibold small mb-0">Password</label>
+              <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" style="font-size: 11px;" ng-click="togglePasswordVisibility()">
+                <i class="bi" ng-class="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i> {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
             <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-lock"></i></span>
-              <input type="password" class="form-control" ng-model="loginData.password" placeholder="Your password" required>
+              <span class="input-group-text bg-white"><i class="bi bi-lock text-muted"></i></span>
+              <input type="{{ showPassword ? 'text' : 'password' }}" class="form-control" ng-model="loginData.password" placeholder="Enter password" required>
             </div>
           </div>
 
           <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" ng-disabled="submitting">
-            <span ng-if="!submitting"><i class="bi bi-box-arrow-in-right me-1"></i> Sign In</span>
-            <span ng-if="submitting"><i class="bi bi-hourglass-split me-1"></i> Signing in...</span>
+            <span ng-if="!submitting"><i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Portal</span>
+            <span ng-if="submitting"><i class="bi bi-hourglass-split me-1"></i> Authenticating...</span>
           </button>
         </form>
 
+        <!-- Quick One-Click Demo Credentials Box -->
+        <div class="bg-light p-3 rounded-3 border mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-secondary-subtle text-secondary border fw-semibold">
+              <i class="bi bi-magic me-1"></i> Demo Citizen Accounts
+            </span>
+            <span class="text-muted" style="font-size: 10px;">Click to auto-fill</span>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary text-start d-flex justify-content-between align-items-center" ng-click="fillDemoCitizen()">
+              <span><i class="bi bi-envelope me-1"></i> citizen@example.com</span>
+              <span class="badge bg-primary">Fill</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary text-start d-flex justify-content-between align-items-center" ng-click="fillDemoCitizenPhone()">
+              <span><i class="bi bi-telephone me-1"></i> 9822012345 (Mobile)</span>
+              <span class="badge bg-secondary">Fill</span>
+            </button>
+          </div>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top small">
-          <a href="#/register" class="text-primary fw-semibold">Create New Account</a>
-          <a href="#/admin-login" class="text-muted"><i class="bi bi-shield-lock me-1"></i>Admin Portal</a>
+          <a href="#/register" class="text-primary fw-semibold"><i class="bi bi-person-plus me-1"></i>Create New Account</a>
+          <a href="#/admin-login" class="text-muted"><i class="bi bi-shield-lock me-1"></i>Officer Login</a>
         </div>
       </div>
     </div>

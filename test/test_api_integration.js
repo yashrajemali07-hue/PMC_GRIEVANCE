@@ -163,8 +163,8 @@ async function runApiTests() {
     console.log('✓ Citizen phone number login succeeded');
 
     // 6. Admin Login with ADMIN_USER and ADMIN_PASS
-    console.log('\n[TEST 6] POST /api/auth/login as PMC Officer (admin)');
-    const adminLogin = await postJson('/api/auth/login', {
+    console.log('\n[TEST 6] POST /api/auth/admin/login as PMC Officer (admin)');
+    const adminLogin = await postJson('/api/auth/admin/login', {
       username: process.env.ADMIN_USER || 'admin',
       password: process.env.ADMIN_PASS || 'adminPMC@2026',
     });
@@ -173,6 +173,51 @@ async function runApiTests() {
       throw new Error(`Admin login failed: ${JSON.stringify(adminLogin.data)}`);
     }
     console.log('✓ PMC Officer login succeeded with role: admin');
+
+    // 6b. Role Separation & Access Control Validation
+    console.log('\n[TEST 6b] Role Separation & Portal Validation');
+    const citizenOnAdminPortal = await postJson('/api/auth/admin/login', {
+      email: testEmail,
+      password: 'Password123!',
+    });
+    if (citizenOnAdminPortal.status !== 403) {
+      throw new Error(`Expected 403 for citizen on admin portal, got ${citizenOnAdminPortal.status}`);
+    }
+    console.log('✓ Citizen blocked from Officer Portal (403)');
+
+    const adminOnCitizenPortal = await postJson('/api/auth/citizen/login', {
+      username: process.env.ADMIN_USER || 'admin',
+      password: process.env.ADMIN_PASS || 'adminPMC@2026',
+    });
+    if (adminOnCitizenPortal.status !== 403) {
+      throw new Error(`Expected 403 for admin on citizen portal, got ${adminOnCitizenPortal.status}`);
+    }
+    console.log('✓ Admin blocked from Citizen Login portal (403)');
+
+    const adminWrongPass = await postJson('/api/auth/admin/login', {
+      username: process.env.ADMIN_USER || 'admin',
+      password: 'WrongPassword!',
+    });
+    if (adminWrongPass.status !== 401) {
+      throw new Error(`Expected 401 for wrong admin password, got ${adminWrongPass.status}`);
+    }
+    console.log('✓ Wrong admin password rejected cleanly (401)');
+
+    const citizenCallingAdminRoute = await getJson('/api/admin/stats', {
+      Authorization: `Bearer ${citizenLogin.data.token}`,
+    });
+    if (citizenCallingAdminRoute.status !== 403) {
+      throw new Error(`Expected 403 for citizen on admin stats, got ${citizenCallingAdminRoute.status}`);
+    }
+    console.log('✓ Citizen blocked from /api/admin/stats (403)');
+
+    const adminCallingCitizenRoute = await getJson('/api/grievances/mine', {
+      Authorization: `Bearer ${adminLogin.data.token}`,
+    });
+    if (adminCallingCitizenRoute.status !== 403) {
+      throw new Error(`Expected 403 for admin on /api/grievances/mine, got ${adminCallingCitizenRoute.status}`);
+    }
+    console.log('✓ Admin blocked from citizen-only /api/grievances/mine (403)');
 
     // 7. Protected Route GET /api/auth/me with Citizen Token
     console.log('\n[TEST 7] GET /api/auth/me with Citizen Token');

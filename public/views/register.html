@@ -83,7 +83,7 @@
             <label class="form-label fw-semibold small">Contact Mobile Number (Optional)</label>
             <div class="input-group">
               <span class="input-group-text bg-white"><i class="bi bi-telephone text-muted"></i></span>
-              <input type="tel" class="form-control" ng-model="regData.phone" placeholder="10-digit mobile number, e.g. 9822012345">
+              <input type="tel" class="form-control" ng-model="regData.phone" placeholder="10-digit mobile number, e.g. 9822012345" pattern="[6-9][0-9]{9}" maxlength="10" title="Enter a valid 10-digit Indian mobile number starting with 6-9">
             </div>
             <div class="form-text text-muted" style="font-size: 11px;">You can also use this mobile number to sign in directly later.</div>
           </div>

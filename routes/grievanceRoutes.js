@@ -8,14 +8,14 @@ const {
   getMapGrievances,
   updateGrievanceStatus,
 } = require('../controllers/grievanceController');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, citizenOnly } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-// 1. POST /api/grievances (citizen protected, multipart with image via multer)
-router.post('/', protect, upload.single('image'), createGrievance);
+// 1. POST /api/grievances (verified citizen protected, multipart with image via multer)
+router.post('/', protect, citizenOnly, upload.single('image'), createGrievance);
 
-// 2. GET /api/grievances/mine (citizen's own grievances)
-router.get('/mine', protect, getMyGrievances);
+// 2. GET /api/grievances/mine (verified citizen's own grievances)
+router.get('/mine', protect, citizenOnly, getMyGrievances);
 
 // 3. GET /api/grievances/track/:grievanceId (public tracking by ID)
 router.get('/track/:grievanceId', trackGrievance);

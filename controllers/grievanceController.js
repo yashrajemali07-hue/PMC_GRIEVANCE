@@ -2,7 +2,7 @@
 const Grievance = require('../models/Grievance');
 const Counter = require('../models/Counter');
 const User = require('../models/User');
-const { PMC_WARDS, GRIEVANCE_CATEGORIES } = require('../models/constants');
+const { PMC_WARDS, GRIEVANCE_CATEGORIES, GRIEVANCE_STATUSES } = require('../models/constants');
 const { calculateAutoPriority } = require('../utils/priorityUtils');
 const { findNearbyDuplicate } = require('../utils/geoUtils');
 
@@ -191,11 +191,13 @@ const getMyGrievances = async (req, res, next) => {
       });
     }
 
+    const queryConditions = [{ createdBy: req.user._id }];
+    if (req.user.email) {
+      queryConditions.push({ citizenEmail: req.user.email.toLowerCase() });
+    }
+
     const grievances = await Grievance.find({
-      $or: [
-        { createdBy: req.user._id },
-        { citizenEmail: req.user.email.toLowerCase() },
-      ],
+      $or: queryConditions,
     }).sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -286,6 +288,13 @@ const updateGrievanceStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status, remarks, assignedOfficer } = req.body;
+
+    if (status && !GRIEVANCE_STATUSES.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status '${status}'. Must be one of: ${GRIEVANCE_STATUSES.join(', ')}`,
+      });
+    }
 
     const grievance = await Grievance.findOne({
       $or: [{ grievanceId: id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],

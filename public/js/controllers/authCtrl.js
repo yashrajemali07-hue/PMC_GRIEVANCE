@@ -122,11 +122,45 @@
       // 1. Submit Registration
       $scope.doRegister = function () {
         $scope.errorMsg = null;
+
+        const name = ($scope.regData.name || '').trim();
+        const email = ($scope.regData.email || '').trim();
+        const password = $scope.regData.password || '';
+        const ward = ($scope.regData.ward || '').trim();
+        const phone = ($scope.regData.phone || '').replace(/[\s\-()]/g, '').replace(/^\+91/, '');
+
+        if (name.length < 2) {
+          $scope.errorMsg = 'Please enter your full name (at least 2 characters).';
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          $scope.errorMsg = 'Please enter a valid email address.';
+          return;
+        }
+        if (password.length < 6) {
+          $scope.errorMsg = 'Password must be at least 6 characters long.';
+          return;
+        }
+        if (!ward) {
+          $scope.errorMsg = 'Please select your PMC ward office.';
+          return;
+        }
+        if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+          $scope.errorMsg = 'Please enter a valid 10-digit Indian mobile number starting with 6-9.';
+          return;
+        }
+
         $scope.submitting = true;
 
-        AuthService.register($scope.regData)
+        AuthService.register({
+          name: name,
+          email: email,
+          password: password,
+          ward: ward,
+          phone: phone,
+        })
           .then(function (res) {
-            localStorage.setItem('pmc_pending_email', $scope.regData.email);
+            localStorage.setItem('pmc_pending_email', email);
             $location.path('/verify-otp');
           })
           .catch(function (err) {
@@ -140,9 +174,23 @@
       // 2. Submit OTP Verification
       $scope.doVerifyOtp = function () {
         $scope.errorMsg = null;
+        $scope.successMsg = null;
+
+        const email = ($scope.otpData.email || '').trim();
+        const otp = ($scope.otpData.otp || '').trim();
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          $scope.errorMsg = 'Please provide the registered email address for verification.';
+          return;
+        }
+        if (!/^\d{6}$/.test(otp)) {
+          $scope.errorMsg = 'Please enter a valid 6-digit numeric OTP.';
+          return;
+        }
+
         $scope.submitting = true;
 
-        AuthService.verifyOtp($scope.otpData)
+        AuthService.verifyOtp({ email: email, otp: otp })
           .then(function (res) {
             localStorage.removeItem('pmc_pending_email');
             if (res.data && res.data.token && res.data.user) {
@@ -162,11 +210,15 @@
 
       // Resend OTP
       $scope.resendOtp = function () {
-        if (!$scope.otpData.email) return;
+        const email = ($scope.otpData.email || '').trim();
+        if (!email) {
+          $scope.errorMsg = 'Please enter your registered email address first.';
+          return;
+        }
         $scope.errorMsg = null;
         $scope.successMsg = null;
 
-        AuthService.resendOtp($scope.otpData.email)
+        AuthService.resendOtp(email)
           .then(function (res) {
             $scope.successMsg = 'A fresh 6-digit verification code has been dispatched to your email.';
             startOtpCountdown();
@@ -179,20 +231,28 @@
       // 3. Citizen Login
       $scope.doLogin = function () {
         $scope.errorMsg = null;
+
+        const identifier = ($scope.loginData.email || '').trim();
+        const password = $scope.loginData.password || '';
+        if (!identifier || !password) {
+          $scope.errorMsg = 'Please enter your email/mobile number and password.';
+          return;
+        }
+
         $scope.submitting = true;
 
-        AuthService.login($scope.loginData)
+        AuthService.login({ email: identifier, password: password })
           .then(function (res) {
-            AuthService.setAuth(res.data.token, res.data.user);
-            if (res.data.user && res.data.user.role === 'admin') {
-              $location.path('/admin-dashboard');
-            } else {
-              $location.path('/profile');
+            if (!res.data || !res.data.user || res.data.user.role !== 'citizen') {
+              $scope.errorMsg = 'Officer accounts must sign in through the Officer Portal.';
+              return;
             }
+            AuthService.setAuth(res.data.token, res.data.user);
+            $location.path('/profile');
           })
           .catch(function (err) {
             if (err.data && err.data.requiresVerification) {
-              localStorage.setItem('pmc_pending_email', err.data.email || $scope.loginData.email);
+              localStorage.setItem('pmc_pending_email', err.data.email || identifier);
               $location.path('/verify-otp');
             } else {
               $scope.errorMsg = (err.data && err.data.message) || 'Invalid email/phone or password.';
@@ -206,16 +266,24 @@
       // 4. Admin Login
       $scope.doAdminLogin = function () {
         $scope.errorMsg = null;
+
+        const username = ($scope.adminData.username || '').trim();
+        const password = $scope.adminData.password || '';
+        if (!username || !password) {
+          $scope.errorMsg = 'Please enter your administrator username/email and password.';
+          return;
+        }
+
         $scope.submitting = true;
 
-        AuthService.adminLogin($scope.adminData)
+        AuthService.adminLogin({ username: username, password: password })
           .then(function (res) {
-            AuthService.setAuth(res.data.token, res.data.user);
-            if (res.data.user && res.data.user.role === 'citizen') {
-              $location.path('/profile');
-            } else {
-              $location.path('/admin-dashboard');
+            if (!res.data || !res.data.user || res.data.user.role !== 'admin') {
+              $scope.errorMsg = 'Access denied: Administrator privileges required.';
+              return;
             }
+            AuthService.setAuth(res.data.token, res.data.user);
+            $location.path('/admin-dashboard');
           })
           .catch(function (err) {
             $scope.errorMsg = (err.data && err.data.message) || 'Invalid administrator credentials.';

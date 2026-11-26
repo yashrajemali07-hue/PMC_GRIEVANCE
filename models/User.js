@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please enter full name'],
       trim: true,
+      minlength: [2, 'Name must be at least 2 characters long'],
+      maxlength: [100, 'Name cannot exceed 100 characters'],
     },
     email: {
       type: String,
@@ -37,6 +39,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: '',
+      validate: {
+        validator: function (v) {
+          return !v || /^[6-9]\d{9}$/.test(v);
+        },
+        message: 'Please provide a valid 10-digit Indian mobile number',
+      },
     },
     role: {
       type: String,
@@ -52,6 +60,14 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     otpExpiry: {
+      type: Date,
+      default: null,
+    },
+    otpAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lastOtpSentAt: {
       type: Date,
       default: null,
     },
